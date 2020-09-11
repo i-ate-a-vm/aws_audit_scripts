@@ -7,11 +7,11 @@ from botocore.exceptions import ClientError, BotoCoreError
 # Create required S3 clients
 s3 = boto3.client('s3')
 
-# Create argparse object
+# Create argparse object and arguments
 parser = argparse.ArgumentParser(description='Check for public S3 buckets in your AWS account.')
+parser.add_argument('-b', '--bucket', action='append', help='The bucket to evaluate. If no bucket is specified, automatically evaluates all buckets in the account.', required=False)
 
-# Create arguments
-parser.add_argument('-b', '--bucket', action='append', help='Single or comma-separated list of buckets to evaluate. Enter "all" to evaluate all buckets in the account.')
+args = parser.parse_args()
 
 # Begin defining functions
 def get_s3_buckets():
@@ -19,15 +19,25 @@ def get_s3_buckets():
 
 	bucket_names = []
 
-	# Gather names of all buckets in the account to be used in other functions
-	buckets = s3.list_buckets()
+	# Check if bucket names were passed in from cmd line\
+	# ISSUE: Can't validate more than one bucket passed in from cmd line
+	# The s3.list_buckets() function can only list all buckets; no name matching supported
+	if args.bucket:
+		bucket_names = args.bucket
 
-	# Remove unnecessary keys from variable
-	buckets = buckets['Buckets']
+		# Validate that specified buckets exist
+		#for name in bucket_names:
+			#s3.list_buckets(Bucket=name)
 
-	# Loop through variable and create a list of names only 
-	for name in buckets:
-		bucket_names.append(name['Name'])
+	# If no buckets are specified, gather names of all buckets in the account to be used in other functions
+	elif args.bucket is None:
+		buckets = s3.list_buckets()
+		# Remove unnecessary keys from variable
+		buckets = buckets['Buckets']
+
+		# Loop through variable and create a list of names only 
+		for name in buckets:
+			bucket_names.append(name['Name'])
 
 	return bucket_names
 
