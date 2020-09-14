@@ -28,8 +28,7 @@ HeadBucket
 This script will be more CLI-friendly in the near future. For now, your best bet is to execute `python get_public_s3.py` from the cloned directory. 
 
 #### To Do's
-- Add validation to ensure that bucket specified in cmd line args exists
-- Enable passing in more than one bucket to the -b argument
 - Add arguments to support matching bucket tags
 - Add error checking for invalid IAM permissions for the configured user access key
 - Evaluate ACLs of individual objects/ object versions
+- Enable passing in more than one bucket to the -b argument

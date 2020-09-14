@@ -9,7 +9,7 @@ s3 = boto3.client('s3')
 
 # Create argparse object and arguments
 parser = argparse.ArgumentParser(description='Check for public S3 buckets in your AWS account.')
-parser.add_argument('-b', '--bucket', action='append', help='The bucket to evaluate. If no bucket is specified, automatically evaluates all buckets in the account.', required=False)
+parser.add_argument('-b', '--bucket', action='append', help='The single bucket to evaluate. If no bucket is specified, automatically evaluates all buckets in the account.', required=False)
 
 args = parser.parse_args()
 
@@ -18,28 +18,33 @@ def get_s3_buckets():
 	# Gathers names of all S3 buckets in the account which access keys are configured for
 
 	bucket_names = []
+	# Gather list of buckets to either compare args to or return
+	buckets = s3.list_buckets()
+	# Remove unnecessary keys from variable
+	buckets = buckets['Buckets']
+	# Loop through variable and create a list of names only 
+	for name in buckets:
+		bucket_names.append(name['Name'])
 
-	# Check if bucket names were passed in from cmd line\
-	# ISSUE: Can't validate more than one bucket passed in from cmd line
-	# The s3.list_buckets() function can only list all buckets; no name matching supported
-	if args.bucket:
-		bucket_names = args.bucket
+	# If no buckets are specified, simply return gathered bucket names
+	if args.bucket is None:
+		print('No bucket specified; evaluating all buckets in the account.')
+		return bucket_names
 
-		# Validate that specified buckets exist
-		#for name in bucket_names:
-			#s3.list_buckets(Bucket=name)
+	# If buckets are specified, check that bucket exists and exit if not
+	elif args.bucket:
+		# Get string of bucket name specified in cmd line argument
+		bucket_specified = args.bucket[0] # This only works while only one argument is passed in
 
-	# If no buckets are specified, gather names of all buckets in the account to be used in other functions
-	elif args.bucket is None:
-		buckets = s3.list_buckets()
-		# Remove unnecessary keys from variable
-		buckets = buckets['Buckets']
+		if bucket_specified in bucket_names:
+			return args.bucket
+		elif bucket_specified not in bucket_names:
+			print('ERROR: Specified bucket does not exist in the current AWS account.')
+			exit(1)
 
-		# Loop through variable and create a list of names only 
-		for name in buckets:
-			bucket_names.append(name['Name'])
 
-	return bucket_names
+	
+		
 
 
 def get_block_public_access_rules(bucket):
