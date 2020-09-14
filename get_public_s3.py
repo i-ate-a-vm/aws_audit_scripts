@@ -1,4 +1,5 @@
 # Import required libraries
+import argparse 
 import boto3
 import pandas
 from botocore.exceptions import ClientError, BotoCoreError
@@ -6,23 +7,44 @@ from botocore.exceptions import ClientError, BotoCoreError
 # Create required S3 clients
 s3 = boto3.client('s3')
 
+# Create argparse object and arguments
+parser = argparse.ArgumentParser(description='Check for public S3 buckets in your AWS account.')
+parser.add_argument('-b', '--bucket', action='append', help='The single bucket to evaluate. If no bucket is specified, automatically evaluates all buckets in the account.', required=False)
+
+args = parser.parse_args()
+
 # Begin defining functions
 def get_s3_buckets():
 	# Gathers names of all S3 buckets in the account which access keys are configured for
 
 	bucket_names = []
-
-	# Gather names of all buckets in the account to be used in other functions
+	# Gather list of buckets to either compare args to or return
 	buckets = s3.list_buckets()
-
 	# Remove unnecessary keys from variable
 	buckets = buckets['Buckets']
-
 	# Loop through variable and create a list of names only 
 	for name in buckets:
 		bucket_names.append(name['Name'])
 
-	return bucket_names
+	# If no buckets are specified, simply return gathered bucket names
+	if args.bucket is None:
+		print('No bucket specified; evaluating all buckets in the account.')
+		return bucket_names
+
+	# If buckets are specified, check that bucket exists and exit if not
+	elif args.bucket:
+		# Get string of bucket name specified in cmd line argument
+		bucket_specified = args.bucket[0] # This only works while only one argument is passed in
+
+		if bucket_specified in bucket_names:
+			return args.bucket
+		elif bucket_specified not in bucket_names:
+			print('ERROR: Specified bucket does not exist in the current AWS account.')
+			exit(1)
+
+
+	
+		
 
 
 def get_block_public_access_rules(bucket):
