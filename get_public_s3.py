@@ -138,7 +138,7 @@ def identify_public_buckets(all_buckets):
 	return bucket_df
 
 
-def create_csv(results_df):
+def create_s3_report(results_df):
 	# Uses the results_df from identify_public_buckets function and converts them into the CSV report
 	return results_df.to_csv('./output/s3_public_data.csv', index=False)
 
@@ -146,5 +146,5 @@ def create_csv(results_df):
 # Main block
 all_buckets = get_s3_buckets()
 results_df = identify_public_buckets(all_buckets)
-create_csv(results_df)
+create_s3_report(results_df)
 print('S3 buckets evaluated successfully. Output file is located at ./output/s3_public_data.csv.')
