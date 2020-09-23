@@ -107,6 +107,7 @@ def get_bucket_acl(bucket):
 	bucket_acl = bucket_acl['Grants']
 
 	# Index allows us to loop through each ACL entry, since each bucket can have more than one
+	# Just realized on review that this is probably only returning last evaluated ACL rule, meaning this could return invalid results
 	for index, entry in enumerate(bucket_acl):
 		try:
 			if bucket_acl[index]['Grantee']['URI'] == 'http://acs.amazonaws.com/groups/global/AllUsers':

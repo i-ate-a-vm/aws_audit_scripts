@@ -42,7 +42,7 @@ Required actions/ permissions:
 {To add}
 
 #### Usage
-Execute `audit_vpc.py` from the cloned directory. 
+Execute `python audit_vpc.py` from the cloned directory. 
 
 
 #### To Do's

@@ -26,7 +26,6 @@ def get_vpcs():
 	# Getting tags is proving to be a big pain, so just doing IDs for now
 	# https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ec2.html#EC2.Client.describe_tags
 
-	# Not seeing a way off the bat to specify region - look into verifying the config file's defaults
 	vpc = ec2.describe_vpcs() 
 	# Remove unnecessary keys 
 	vpc = vpc['Vpcs']
@@ -39,6 +38,7 @@ def get_vpcs():
 	# If no VPC is specified in cmd line arguments, evaluate all VPCs in the region
 	if args.vpc is None:
 		print('No VPC specified; evaluating all VPCs in the current region: ' + region)
+		print('Discovered VPCs: ' + str(vpc_ids))
 		return vpc_ids
 
 	# If VPC is specified, check that VPC exists and exit if not
@@ -53,10 +53,11 @@ def get_vpcs():
 			print('ERROR: Specified VPC does not exist in the current AWS account or Region.')
 			exit(1)
 
-def eval_auto_assign_public_subnets(vpc_ids):
-	# Gather all subnets from all VPCs, then determine whether their map_public_ip_on_launch attribute is True
-	subnet_list = []
 
+def gather_subnets(vpc_ids):
+	# Gather all subnets from specified VPC(s)
+	# Current code only works correctly if only one VPC is specified; need to count VPCs and associate VPC-to-subnet relationships
+	# https://stackoverflow.com/questions/20585920/how-to-add-multiple-values-to-a-dictionary-key-in-python
 	for vpc in vpc_ids:
 		subnets = ec2.describe_subnets(Filters=[
         {
@@ -70,8 +71,41 @@ def eval_auto_assign_public_subnets(vpc_ids):
 		
 		# Remove unnecessary keys 
 		subnets = subnets['Subnets']
-		print(subnets)
+	
+	return subnets
 
+
+
+def eval_auto_assign_public_subnets(subnet):
+	# Evaluate discovered subnets for auto-assign public IP setting
+	subnet_id = subnet['SubnetId']
+
+	if subnet['MapPublicIpOnLaunch'] == True:
+		auto_public_ip = True
+
+	elif subnet['MapPublicIpOnLaunch'] == False:
+		auto_public_ip = False
+
+	return subnet_id, auto_public_ip
+
+
+
+def populate_subnet_report(subnets):
+	# Perform VPC evaluations and populate them
+	columns = ['VPC ID', 'Subnet ID', 'Subnet Assigns Public IP'] # This should eventually include data about routes, NACLs, possibly more
+	subnet_df = pandas.DataFrame(columns=list(columns))
+	vpc_id = 'Temp Name' # need to associate this from gather_subnets function, could be with dict using list values: {vpc-nnnn, [sub1, sub2, sub3]}
+
+	for subnet in subnets:
+
+		# Poulate variables needed to do analysis
+		subnet_id, auto_public_ip = eval_auto_assign_public_subnets(subnet)
+
+		# Create dataframe structures to be converted into CSV
+		append_series = pandas.Series([vpc_id, subnet_id, auto_public_ip], index=columns)
+		subnet_df = subnet_df.append(append_series, ignore_index=True)
+
+	return subnet_df
 
 
 
@@ -81,4 +115,7 @@ def create_vpc_report(results_df):
 
 # Main block
 vpc_ids = get_vpcs()
-eval_auto_assign_public_subnets(vpc_ids)
+subnet_ids = gather_subnets(vpc_ids) # need a way to associate which subnet came from which VPC
+results_df = populate_subnet_report(subnet_ids)
+create_vpc_report(results_df)
+print('VPC(s) evaluated successfully. Output file is located at ./output/vpc_audit_data.csv.')
