@@ -29,6 +29,7 @@ Execute `python get_public_s3.py` from the cloned directory. Adding the `-h` arg
 
 ### audit_vpc.py
 This script validates multiple security settings in your VPCs, including - 
+- Whether VPCs are collecting flow logs, and if so, where the flow logs are being output
 - Whether subnets automatically assign public IPs to instances launched in them
 - More to come
 
