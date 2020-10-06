@@ -4,7 +4,7 @@ import boto3
 import pandas
 
 # Create argparse object and arguments
-parser = argparse.ArgumentParser(description='Check for public S3 buckets in your AWS account.')
+parser = argparse.ArgumentParser(description='Check for VPC configurations in your AWS account.')
 parser.add_argument('-r', '--region', action='store', type=str, help='The region to evaluate VPC resources for.', required=True)
 parser.add_argument('-v', '--vpc', action='append', help='The ID of the single VPC to evaluate. DOES NOT CURRENTLY SUPPORT USING VPC NAME. If no VPC is specified, automatically evaluates all VPCs in the account.', required=False)
 
@@ -86,22 +86,58 @@ def eval_auto_assign_public_subnets(subnet):
 
 
 
-def populate_subnet_report(vpc_subnet_dict):
-	# Perform VPC evaluations and populate them
-	columns = ['VPC ID', 'Subnet ID', 'Subnet Assigns Public IP'] # This should eventually include data about routes, NACLs, possibly more
-	subnet_df = pandas.DataFrame(columns=list(columns))
+def eval_flow_logs(vpc):
+	# Evaluates current VPC to determine if flow logs are enabled. If logs are enabled, returns their storage location.
+	flow_logs = ec2.describe_flow_logs(Filters=[
+        {
+            'Name': 'resource-id',
+            'Values': [
+                vpc,
+            		],
+        		},
+    		],
+		)
+
+	# Remove unnecessary keys
+	flow_logs = flow_logs['FlowLogs']
+	
+	# If flow log is inactive, flow_logs['FlowLogs'] returns an empty list
+	if flow_logs:
+		flow_log_active = flow_logs[0]['FlowLogStatus']
+		flow_log_dest = flow_logs[0]['LogDestination']
+	elif not flow_logs:
+		flow_log_active = 'INACTIVE'
+		flow_log_dest = 'N/A'
+
+	return flow_log_active, flow_log_dest
+
+
+
+def populate_report(vpc_subnet_dict):
+	# Perform VPC evaluations and populate them into DF
+	columns = ['VPC ID', 'Flow Logs Active', 'Flow Logs Location', 'Subnet ID', 'Subnet Assigns Public IP']
+	vpc_df = pandas.DataFrame(columns=list(columns))
 
 	for vpc in vpc_subnet_dict.values():
+		# Perform subnet evaluations and populate them into DF
+		vpc_id = vpc[0]['VpcId']
+		flow_log_active, flow_log_dest = eval_flow_logs(vpc_id)
+		
+		# Create dataframe VPC line to be converted into CSV
+		append_series = pandas.Series([vpc_id, flow_log_active, flow_log_dest, '', ''], index=columns)
+		vpc_df = vpc_df.append(append_series, ignore_index=True)
+
+
 		for subnet in vpc: 
+			# Code to evaluate subnet data runs here, then enters data into DF
 			auto_public_ip = eval_auto_assign_public_subnets(subnet)
 			subnet_id = subnet['SubnetId']
-			vpc_id = vpc[0]['VpcId']
 
-			# Create dataframe structures to be converted into CSV
-			append_series = pandas.Series([vpc_id, subnet_id, auto_public_ip], index=columns)
-			subnet_df = subnet_df.append(append_series, ignore_index=True)
+			# Create dataframe subnet line to be converted into CSV
+			append_series = pandas.Series(['', '', '', subnet_id, auto_public_ip], index=columns)
+			vpc_df = vpc_df.append(append_series, ignore_index=True)
 
-	return subnet_df
+	return vpc_df
 
 
 
@@ -114,6 +150,6 @@ def create_vpc_report(results_df):
 # Main block
 vpc_ids = get_vpcs()
 vpc_subnet_dict = gather_subnets(vpc_ids) 
-results_df = populate_subnet_report(vpc_subnet_dict)
+results_df = populate_report(vpc_subnet_dict)
 create_vpc_report(results_df)
 print('VPC(s) evaluated successfully. Output file is located at ./output/vpc_audit_data.csv.')
