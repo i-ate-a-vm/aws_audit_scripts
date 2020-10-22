@@ -35,7 +35,7 @@ This script has multiple sets of checks it can run against RDS instances (Backup
 
 Once the validation is complete, a CSV file is created in the `output` folder that outlines RDS findings.
 
-Currently, the script only checks RDS instances of one account. All RDS instances of the account are checked unless the `-b` argument is used to specify a bucket. At the moment, only one bucket can be specified.
+Currently, the script only checks RDS instances of one account. All RDS instances of the account are checked unless the `-i` argument is used to specify an instance. At the moment, only one instance can be specified, and the friendly instance name (rather than instance ID) must be used.
 
 The script assumes that your configured IAM user has the correct IAM permissions to access RDS instances. The required actions are listed below, and a full list of actions can be found here: https://docs.aws.amazon.com/IAM/latest/UserGuide/list_amazonrds.html
 
