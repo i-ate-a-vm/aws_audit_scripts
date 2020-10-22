@@ -120,7 +120,7 @@ def get_bucket_acl(bucket):
 def identify_public_buckets(all_buckets):
 	# Creates dataframe that will be used to generate CSV report and validates which parts of bucket permissions are public, if any
 	columns = ['Bucket Name', 'Public Block Enabled', 'Bucket Policy Public', 'Bucket ACL Public']
-	bucket_df = pandas.DataFrame(columns=list(columns)) # when a DF is created from a list, it puts the values in the first column rather than first row
+	bucket_df = pandas.DataFrame(columns=list(columns)) 
 
 	for bucket in all_buckets:
 
