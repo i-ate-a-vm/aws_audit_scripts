@@ -1,9 +1,3 @@
-'''
-Script currently doesn't like how I'm parsing the JSON in each of the functions, complaining about a string index that must be an integer because the object type comes in as a list
-
-'''
-
-
 # Import required libraries
 import argparse 
 import boto3
