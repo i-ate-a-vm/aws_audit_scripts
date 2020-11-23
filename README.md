@@ -4,6 +4,8 @@ Scripts to help with auditing your AWS environment.
 ## Initial Configuration
 These scripts assume that you already have working access keys configured to your AWS account. You can find details on how to configure your access keys for CLI use here: https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-quickstart.html
 
+While your profile is checked for credentials, you can manually specify the region and named profile to use in each script, ensuring that you can use values outside of your `~/.aws/config` file to run the scripts.
+
 ## Individual Scripts
 
 ### audit_s3.py
