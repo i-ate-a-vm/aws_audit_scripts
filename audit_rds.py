@@ -1,10 +1,12 @@
 # Import required libraries
-import argparse 
-import boto3
+import argparse
 import pandas
+import modules.build_client as bc
 
 # Create argparse object and arguments
 parser = argparse.ArgumentParser(description='Check for RDS configurations in your AWS account. Groups of checks are outlined as arguments; if no group arguments (-b, -m, -s) are added, all checks are run.')
+parser.add_argument('-r', '--region', action='store', type=str, help='The region to evaluate RDS resources for. If not set, uses the default region specified in your profile.', required=False, default=None)
+parser.add_argument('-p', '--profile', action='store', help='AWS credential profile to run the script under. Automatically uses "default" if no profile is specified.', required=False, default='default')
 parser.add_argument('-i', '--instance', action='store', help='The friendly name of the single RDS instance to evaluate. If no instance is specified, automatically evaluates all instances in the account.', required=False)
 parser.add_argument('-b', '--backups', action='store_true', help='Only run Backup/ Availability checks.', required=False)
 parser.add_argument('-s', '--security', action='store_true', help='Only run Security checks.', required=False)
@@ -13,7 +15,8 @@ parser.add_argument('-m', '--monitoring', action='store_true', help='Only run Mo
 args = parser.parse_args()
 
 # Create required RDS client
-rds = boto3.client('rds')
+service = 'rds'
+rds = bc.build_client(args.profile, service, args.region)
 
 # Begin defining functions
 def get_rds_instances(arg): # arg is passed the --instance argument in main block
@@ -32,8 +35,6 @@ def get_rds_instances(arg): # arg is passed the --instance argument in main bloc
 
 def get_id_data(instance_data): # This is run no matter which args are included
 	# Gather identifying data about instances
-	
-
 	# Variables to return
 	id_data = {'DBInstanceIdentifier': [], 'Engine': [], 'DBInstanceStatus': []}
 

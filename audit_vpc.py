@@ -1,18 +1,19 @@
 # Import required libraries
-import argparse 
-import boto3
+import argparse
 import pandas
+import modules.build_client as bc
 
 # Create argparse object and arguments
 parser = argparse.ArgumentParser(description='Check for VPC configurations in your AWS account.')
-parser.add_argument('-r', '--region', action='store', type=str, help='The region to evaluate VPC resources for.', required=True)
+parser.add_argument('-r', '--region', action='store', type=str, help='The region to evaluate VPC resources for. If not set, uses the default region specified in your profile.', required=False, default=None)
+parser.add_argument('-p', '--profile', action='store', help='AWS credential profile to run the script under. Automatically uses "default" if no profile is specified.', required=False, default='default')
 parser.add_argument('-v', '--vpc', action='append', help='The ID of the single VPC to evaluate. DOES NOT CURRENTLY SUPPORT USING VPC NAME. If no VPC is specified, automatically evaluates all VPCs in the account.', required=False)
 
 args = parser.parse_args()
 
 # Create required EC2 client to gather VPC data, specifying region
-region = args.region
-ec2 = boto3.client('ec2', region_name=region)
+service = 'ec2'
+ec2 = bc.build_client(args.profile, service, args.region)
 
 # Begin defining functions
 def get_vpcs(): # No changes required
@@ -29,7 +30,7 @@ def get_vpcs(): # No changes required
 
 	# If no VPC is specified in cmd line arguments, evaluate all VPCs in the region
 	if args.vpc is None:
-		print('No VPC specified; evaluating all VPCs in the current region: ' + region)
+		print('No VPC specified; evaluating all VPCs in the current region.')
 		print('Discovered VPCs: ' + str(vpc_ids))
 		return vpc_ids
 

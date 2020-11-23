@@ -1,17 +1,20 @@
 # Import required libraries
-import argparse 
-import boto3
+import argparse
 import pandas
-from botocore.exceptions import ClientError, BotoCoreError
-
-# Create required S3 clients
-s3 = boto3.client('s3')
+import modules.build_client as bc
+from botocore.exceptions import ClientError
 
 # Create argparse object and arguments
 parser = argparse.ArgumentParser(description='Check for public S3 buckets in your AWS account.')
+parser.add_argument('-r', '--region', action='store', type=str, help='The region to evaluate S3 resources for. If not set, uses the default region specified in your profile.', required=False, default=None)
+parser.add_argument('-p', '--profile', action='store', help='AWS credential profile to run the script under. Automatically uses "default" if no profile is specified.', required=False, default='default')
 parser.add_argument('-b', '--bucket', action='append', help='The single bucket to evaluate. If no bucket is specified, automatically evaluates all buckets in the account.', required=False)
 
 args = parser.parse_args()
+
+# Create required S3 clients
+service = 's3'
+s3 = bc.build_client(args.profile, service, args.region)
 
 # Begin defining functions
 def get_s3_buckets():
