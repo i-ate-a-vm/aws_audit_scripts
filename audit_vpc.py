@@ -2,6 +2,8 @@
 import argparse
 import pandas
 import modules.build_client as bc
+from botocore.exceptions import ClientError
+
 
 # Create argparse object and arguments
 parser = argparse.ArgumentParser(description='Check for VPC configurations in your AWS account.')
@@ -18,7 +20,15 @@ ec2 = bc.build_client(args.profile, service, args.region)
 # Begin defining functions
 def get_vpcs(): # No changes required
 	# Gathers IDs of all VPCs in the specified region
-	vpc = ec2.describe_vpcs() 
+	try:
+		vpc = ec2.describe_vpcs()
+	except ClientError as pub_error:
+		if pub_error.response['Error']['Code'] == 'InvalidClientTokenId':
+			print("Error: Invalid Client Token ID. Validate that the token is valid.")
+			exit(1)
+		elif pub_error.response['Error']['Code'] == 'AccessDenied':
+			print("Error: Access Denied. See README.md for IAM permissions required to execute this script.")
+			exit(2)
 
 	# Remove unnecessary keys 
 	vpc = vpc['Vpcs']

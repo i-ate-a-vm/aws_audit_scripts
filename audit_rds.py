@@ -2,6 +2,7 @@
 import argparse
 import pandas
 import modules.build_client as bc
+from botocore.exceptions import ClientError
 
 # Create argparse object and arguments
 parser = argparse.ArgumentParser(description='Check for RDS configurations in your AWS account. Groups of checks are outlined as arguments; if no group arguments (-b, -m, -s) are added, all checks are run.')
@@ -21,11 +22,21 @@ rds = bc.build_client(args.profile, service, args.region)
 # Begin defining functions
 def get_rds_instances(arg): # arg is passed the --instance argument in main block
 	# Gather data about RDS instances
-	if arg == None:
-		instance_data = rds.describe_db_instances()
-	elif arg != None:
-		# This method has options to use DB names, instance IDs and ARNs; should support checking any 
-		instance_data = rds.describe_db_instances(DBInstanceIdentifier=arg)
+
+	try:
+		if arg == None:
+			instance_data = rds.describe_db_instances()
+		elif arg != None:
+			# This method has options to use DB names, instance IDs and ARNs; should support checking any
+			instance_data = rds.describe_db_instances(DBInstanceIdentifier=arg)
+
+	except ClientError as pub_error:
+		if pub_error.response['Error']['Code'] == 'InvalidClientTokenId':
+			print("Error: Invalid Client Token ID. Validate that the token is valid.")
+			exit(1)
+		elif pub_error.response['Error']['Code'] == 'AccessDenied':
+			print("Error: Access Denied. See README.md for IAM permissions required to execute this script.")
+			exit(2)
 
 	instance_data = instance_data['DBInstances']
 

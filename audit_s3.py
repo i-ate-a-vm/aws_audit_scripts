@@ -22,7 +22,15 @@ def get_s3_buckets():
 	bucket_names = []
 
 	# Gather list of buckets to either compare args to or return
-	buckets = s3.list_buckets()
+	try:
+		buckets = s3.list_buckets()
+	except ClientError as pub_error:
+		if pub_error.response['Error']['Code'] == 'InvalidClientTokenId':
+			print("Error: Invalid Client Token ID. Validate that the token is valid.")
+			exit(1)
+		elif pub_error.response['Error']['Code'] == 'AccessDenied':
+			print("Error: Access Denied. See README.md for IAM permissions required to execute this script.")
+			exit(2)
 
 	# Remove unnecessary keys from variable
 	buckets = buckets['Buckets']
@@ -45,7 +53,7 @@ def get_s3_buckets():
 			return args.bucket
 		elif bucket_specified not in bucket_names:
 			print('ERROR: Specified bucket does not exist in the current AWS account.')
-			exit(1)
+			exit(3)
 
 
 
